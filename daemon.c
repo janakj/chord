@@ -18,10 +18,11 @@ print_help(void)
     static char help_msg[] = "\
 Usage: " NAME " [options]\n\
 Options:\n\
-    -h         This help text.\n\
-    -v         Increase verbosity (Use repeatedly to increase more).\n\
-    -E         Write log messages to standard output instead of syslog.\n\
-    -f         Stay in foreground.\n\
+    -h  This help text\n\
+    -v  Increase verbosity (Use repeatedly to increase more)\n\
+    -E  Write log messages to standard output instead of syslog\n\
+    -i  TUN/TAP network interface name\n\
+    -f  Stay in foreground\n\
 ";
 
     fprintf(stdout, "%s", help_msg);
@@ -35,12 +36,16 @@ main(int argc, char **argv)
     int rv = EXIT_FAILURE;
     int opt, rc, sigfd = -1;
 
-    while((opt = getopt(argc, argv, "hvEf")) != -1) {
+    while((opt = getopt(argc, argv, "hvEfi:")) != -1) {
         switch(opt) {
         case 'h': print_help();             break;
         case 'v': log_threshold--;          break;
         case 'E': log_syslog = 0;           break;
         case 'f': fg++;                     break;
+        case 'i':
+            if (ifname) xfree(ifname);
+            ifname = xstrdup(optarg);
+            break;
         default:
             fprintf(stderr, "Use the -h option for list of supported "
                     "program arguments.\n");

@@ -2,10 +2,16 @@
 
 #include <errno.h>
 #include <sys/select.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/ioctl.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
 #include <ev.h>
 #include <signal.h>
+#include <linux/if.h>
+#include <linux/if_tun.h>
 
 #include "log.h"
 #include "utils.h"
@@ -14,6 +20,37 @@
 static int   init;
 static int   retval;
 static ev_io sigfd;
+static int   tunfd = -1;
+
+char *ifname = NULL;
+
+static int
+open_tun(char *name)
+{
+    static char *dev = "/dev/net/tun";
+    struct ifreq ifr;
+    int fd, err;
+
+    if ((fd = open(dev, O_RDWR | O_NONBLOCK)) < 0) {
+        ERR("Error while opening %s: %s", dev, strerror(errno));
+        return fd;
+    }
+
+    memset(&ifr, 0, sizeof(ifr));
+    ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
+
+    if (name && *name) strncpy(ifr.ifr_name, name, IFNAMSIZ);
+
+    if ((err = ioctl(fd, TUNSETIFF, (void *)&ifr)) < 0) {
+        close(fd);
+        ERR("Error in TUN/TAP ioctl: %s", strerror(errno));
+        return err;
+    }
+
+    DBG("Opened TUN interface '%s'", ifr.ifr_name);
+    return fd;
+}
+
 
 
 static void
@@ -44,7 +81,7 @@ chord_init(int fd)
     /* Initialization is done when we get here. Report to the parent
      * process that we're starting and log the event into the system
      * log. */
-    INF("Chord (%s) version %s (%s-%s-%s) built on %s", NAME,
+    INF("%s version %s (%s-%s-%s) built on %s", NAME,
         VERSION, ARCH, OS, PLATFORM, BUILT);
     DBG("Using libev %d.%d", EV_VERSION_MAJOR, EV_VERSION_MINOR);
 
@@ -79,6 +116,9 @@ chord_init(int fd)
         ev_io_start(EV_DEFAULT_UC_ &sigfd);
     }
 
+    if ((tunfd = open_tun(ifname)) < 0)
+        return -1;
+
     init = 1;
     return 0;
 }
@@ -89,6 +129,12 @@ chord_cleanup(void)
 {
     if (init != 0) INF("Shutting down Chord");
     init = 0;
+
+    if (tunfd >= 0) {
+        DBG("Closing TUN/TAP interface");
+        close(tunfd);
+    }
+    if (ifname) xfree(ifname);
 
     if (sigfd.fd >= 0) {
         ev_io_stop(EV_DEFAULT_UC_ &sigfd);

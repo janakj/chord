@@ -1,9 +1,10 @@
 #ifndef _CHORD_H_
 #define _CHORD_H_
 
-extern int log_threshold;
-extern int log_syslog;
+extern int   log_threshold;
+extern int   log_syslog;
 
+extern char *ifname;
 
 /* Initialize the daemon to the point that chord_run can be called.
  * The parameter fd is an optional file descriptor (-1 if not used)
