@@ -22,6 +22,7 @@ Options:\n\
     -v  Increase verbosity (Use repeatedly to increase more)\n\
     -E  Write log messages to standard output instead of syslog\n\
     -i  TUN/TAP network interface name\n\
+    -s  Serial port special file\n\
     -f  Stay in foreground\n\
 ";
 
@@ -36,7 +37,7 @@ main(int argc, char **argv)
     int rv = EXIT_FAILURE;
     int opt, rc, sigfd = -1;
 
-    while((opt = getopt(argc, argv, "hvEfi:")) != -1) {
+    while((opt = getopt(argc, argv, "hvEfi:s:")) != -1) {
         switch(opt) {
         case 'h': print_help();             break;
         case 'v': log_threshold--;          break;
@@ -45,6 +46,10 @@ main(int argc, char **argv)
         case 'i':
             if (ifname) xfree(ifname);
             ifname = xstrdup(optarg);
+            break;
+        case 's':
+            if (serial) xfree(serial);
+            serial = xstrdup(optarg);
             break;
         default:
             fprintf(stderr, "Use the -h option for list of supported "

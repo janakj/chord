@@ -5,6 +5,7 @@ extern int   log_threshold;
 extern int   log_syslog;
 
 extern char *ifname;
+extern char *serial;
 
 /* Initialize the daemon to the point that chord_run can be called.
  * The parameter fd is an optional file descriptor (-1 if not used)

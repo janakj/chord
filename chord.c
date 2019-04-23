@@ -21,8 +21,11 @@ static int   init;
 static int   retval;
 static ev_io sigfd;
 static int   tunfd = -1;
+static int   serfd = -1;
 
 char *ifname = NULL;
+char *serial = NULL;
+
 
 static int
 open_tun(char *name)
@@ -116,6 +119,18 @@ chord_init(int fd)
         ev_io_start(EV_DEFAULT_UC_ &sigfd);
     }
 
+    if (serial == NULL) {
+        ERR("Please configure serial port name");
+        return -1;
+    }
+
+    serfd = open(serial, O_RDWR | O_NONBLOCK);
+    if (serfd < 0) {
+        ERR("Could not open serial port %s: %s", serial, strerror(errno));
+        return -1;
+    }
+    DBG("Opened serial port %s", serial);
+
     if ((tunfd = open_tun(ifname)) < 0)
         return -1;
 
@@ -129,6 +144,12 @@ chord_cleanup(void)
 {
     if (init != 0) INF("Shutting down Chord");
     init = 0;
+
+    if (serfd >= 0) {
+        DBG("Closing serial port");
+        close(serfd);
+    }
+    if (serial) xfree(serial);
 
     if (tunfd >= 0) {
         DBG("Closing TUN/TAP interface");
