@@ -1,0 +1,15 @@
+*.gz
+*.deb
+*.changes
+*.dsc
+*.log
+*.build
+*.pkg
+\#*\#
+/VERSION
+/chord
+*.a
+*.so
+*.dylib
+.\#*
+/.obj
