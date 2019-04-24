@@ -17,6 +17,7 @@
 
 #include "log.h"
 #include "utils.h"
+#include "comp.h"
 
 #define MAX_PACKET_SIZE 65536
 
@@ -42,26 +43,9 @@ static int   serfd = -1;
 static ev_io tun_watcher;
 static ev_io ser_watcher;
 
+
 char *ifname = NULL;
 char *serial = NULL;
-
-
-static int
-compress(char **dst, size_t *dlen, char *packet, size_t len)
-{
-    *dst = packet;
-    *dlen = len;
-    return 0;
-}
-
-
-static int
-decompress(char **dst, size_t *dlen, char *packet, size_t len)
-{
-    *dst = packet;
-    *dlen = len;
-    return 0;
-}
 
 
 static int
@@ -147,10 +131,6 @@ decode_hdlc_frame(char **packet, size_t *plen, char *data, size_t len)
 }
 
 
-/*
- * Read a compressed packet from the serial port, decompress it, and
- * send a decompressed packet over the TUN/TAP interface.
- */
 static void
 tty2tun(EV_P_ ev_io *w, int revents)
 {
@@ -179,7 +159,7 @@ tty2tun(EV_P_ ev_io *w, int revents)
 
         DBG("TTY: Got %lu bytes", clen);
 
-        if (decompress(&packet, &plen, comp, clen) < 0) {
+        if (comp_expand(&packet, &plen, comp, clen) < 0) {
             ERR("Error while decompressing");
             chord_stop(-1);
             return;
@@ -228,10 +208,6 @@ build_hdlc_frame(char **frame, size_t *flen, char *packet, size_t plen)
 }
 
 
-/*
- * Read packet from TUN/TAP interface file descriptor, compress it and
- * send the compressed packet over the serial port.
- */
 static void
 tun2tty(EV_P_ ev_io *w, int revents)
 {
@@ -253,7 +229,7 @@ tun2tty(EV_P_ ev_io *w, int revents)
     plen = rv;
     DBG("TUN: Got %lu bytes", plen);
 
-    if (compress(&comp, &clen, packet, plen) < 0) {
+    if (comp_shrink(&comp, &clen, packet, plen) < 0) {
         ERR("Error while compressing");
         chord_stop(-1);
         return;
@@ -396,6 +372,10 @@ chord_init(int fd)
     ev_io_init(&tun_watcher, tun2tty, tunfd, EV_READ);
     ev_io_start(EV_DEFAULT_UC_ &tun_watcher);
 
+
+    if (comp_init() < 0)
+        return -1;
+
     init = 1;
     return 0;
 }
@@ -406,6 +386,8 @@ chord_cleanup(void)
 {
     if (init != 0) INF("Shutting down Chord");
     init = 0;
+
+    comp_cleanup();
 
     if (serfd >= 0) {
         DBG("Closing serial port");
