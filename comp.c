@@ -81,7 +81,7 @@ comp_shrink(char **dst, size_t *dlen, char *packet, size_t len)
 
     //compress the packet
     rohc_status = rohc_compress4(compressor, ip_packet, &rohc_packet);
-    if(status == ROHC_STATUS_NO_CONTEXT)
+    if(rohc_status == ROHC_STATUS_NO_CONTEXT)
     {
         fprintf(stderr, "No context\n");
         *dst = packet;
