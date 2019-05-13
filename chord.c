@@ -19,7 +19,7 @@
 #include "utils.h"
 #include "comp.h"
 
-#define MAX_PACKET_SIZE 65536
+
 
 #define FRAME_BOUNDARY 0x7E
 #define CONTROL_ESCAPE 0x7D
@@ -236,7 +236,7 @@ tun2tty(EV_P_ ev_io *w, int revents)
     }
 
     if (clen != plen)
-        DBG("Compressed away %lu bytes", plen - clen);
+        DBG("Compressed away %ld bytes", plen - clen);
 
     build_hdlc_frame(&frame, &flen, comp, clen);
 
