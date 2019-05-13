@@ -37,7 +37,7 @@ prefix ?= /usr/local/
 
 CC ?= gcc
 AR ?= ar
-CFLAGS ?= -Wall -g3
+CFLAGS ?= -Wall -g3 -I/usr/local/src/rohc-rohc-2.2.0/src/comp/
 LDFLAGS ?= -lev
 PC = pkg-config $(PCFLAGS)
 
