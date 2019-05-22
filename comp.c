@@ -101,7 +101,7 @@ comp_shrink(char **dst, size_t *dlen, char *packet, size_t len)
 
     //compress the packet
     rohc_status = rohc_compress4(compressor, ip_packet, &rohc_packet);
-    
+
     if(rohc_status != ROHC_STATUS_OK)
     {
         fprintf(stderr, "compression of IP packet failed: ROHC_strerror: %s, rohc_status: %d\n",
@@ -150,13 +150,27 @@ comp_expand(char **dst, size_t *dlen, char *packet, size_t len)
 
     /* copy the given packet to the ROHC packet */
     rohc_buf_append(&rohc_packet, (uint8_t *) packet, len);
+ 
+    static unsigned char rcvd_feedback_buffer[BUFFER_SIZE];
+    struct rohc_buf rcvd_feedback = rohc_buf_init_empty(rcvd_feedback_buffer, BUFFER_SIZE); //initialize to an empty struct
+    //struct rohc_buf *feedback_send = NULL;
+    static unsigned char feedback_send_buffer[BUFFER_SIZE];
+    struct rohc_buf feedback_send = rohc_buf_init_empty(feedback_send_buffer, BUFFER_SIZE); //initialize to an empty struct
 
-    struct rohc_buf *rcvd_feedback = NULL;
-    struct rohc_buf *feedback_send = NULL;
 
     rohc_status_t status;
 
-    status = rohc_decompress3(decompressor, rohc_packet, &ip_packet, rcvd_feedback, feedback_send); //decompress the packet
+    status = rohc_decompress3(decompressor, rohc_packet, &ip_packet, &rcvd_feedback, &feedback_send); //decompress the packet
+    
+    printf("rcvd_feedback:\n");
+    //if(rcvd_feedback)
+    dump_packet(rcvd_feedback);
+
+    printf("\nfeedback_send:\n");
+    //if(feedback_send)
+        dump_packet(feedback_send);
+    printf("\nfinished printing feedback packets\n");
+    
     if(status == ROHC_STATUS_NO_CONTEXT)
     {
         fprintf(stderr, "No context yet\n");
@@ -172,12 +186,7 @@ comp_expand(char **dst, size_t *dlen, char *packet, size_t len)
         return -7;
     }
 
-    printf("rcvd_feedback:\n");
-    dump_packet(*rcvd_feedback);
-    printf("\nfeedback_send:\n");
-    dump_packet(*feedback_send);
-
-    if(!(rohc_comp_deliver_feedback2(compressor, *feedback_send)))
+     if(!(rohc_comp_deliver_feedback2(compressor, feedback_send)))
     {
         fprintf(stderr, "Feedback didn't work");
     }
