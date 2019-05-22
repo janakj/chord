@@ -81,6 +81,7 @@ comp_shrink(char **dst, size_t *dlen, char *packet, size_t len)
 
     //compress the packet
     rohc_status = rohc_compress4(compressor, ip_packet, &rohc_packet);
+    
     if(rohc_status != ROHC_STATUS_OK)
     {
         fprintf(stderr, "compression of IP packet failed: ROHC_strerror: %s, rohc_status: %d\n",
@@ -149,6 +150,11 @@ comp_expand(char **dst, size_t *dlen, char *packet, size_t len)
         fprintf(stderr, "\trohc_status: %d\n", status);
         fprintf(stderr, "\tstrerror: %s\n", strerror(status));
         return -7;
+    }
+
+    if(!(rohc_comp_deliver_feedback2(compressor, *feedback_send)))
+    {
+        fprintf(stderr, "Feedback didn't work");
     }
 
     memcpy(unCompressedPacket, rohc_buf_data(ip_packet), ip_packet.len); //copy uncompressed data into static memory for return
