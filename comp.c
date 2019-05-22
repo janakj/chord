@@ -158,6 +158,11 @@ comp_expand(char **dst, size_t *dlen, char *packet, size_t len)
         return -7;
     }
 
+    if(!(rohc_comp_deliver_feedback2(compressor, *feedback_send)))
+    {
+        fprintf(stderr, "Feedback didn't work");
+    }
+
     memcpy(unCompressedPacket, rohc_buf_data(ip_packet), ip_packet.len); //copy uncompressed data into static memory for return
     *dst = unCompressedPacket;
     *dlen = ip_packet.len;
