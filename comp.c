@@ -16,6 +16,26 @@ static struct rohc_decomp *decompressor;  /* the ROHC decompressor */
 static char compressedPacket[MAX_PACKET_SIZE]; //MAXPACKETSIZE defined in chord.h
 static char unCompressedPacket[MAX_PACKET_SIZE];
 
+//print a packet byte by byte to stderr
+void dump_packet(const struct rohc_buf packet)
+{
+    fprintf(stderr, "here's your packet.len: %ld\n",packet.len );
+    size_t i;
+
+    for(i = 0; i < packet.len; i++)
+    {
+        fprintf(stderr, "0x%02x ", rohc_buf_byte_at(packet, i));
+        if(i != 0 && ((i + 1) % 8) == 0)
+        {
+            fprintf(stderr, "\n");
+        }
+    }
+    if(i != 0 && ((i + 1) % 8) != 0) /* be sure to go to the line */
+    {
+        fprintf(stderr, "\n");
+    }
+}
+
 //generate a random number, used for generating number of contexts
 //basically hack the arguments to fit the rohc_library's requirements
 static int gen_random_num(const struct rohc_comp *const comp,
@@ -151,6 +171,11 @@ comp_expand(char **dst, size_t *dlen, char *packet, size_t len)
         fprintf(stderr, "\tstrerror: %s\n", strerror(status));
         return -7;
     }
+
+    printf("rcvd_feedback:\n");
+    dump_packet(*rcvd_feedback);
+    printf("\nfeedback_send:\n");
+    dump_packet(*feedback_send);
 
     if(!(rohc_comp_deliver_feedback2(compressor, *feedback_send)))
     {
